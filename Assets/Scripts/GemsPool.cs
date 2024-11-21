@@ -21,7 +21,9 @@ public class GemsPool
     public SC_Gem Get(GlobalEnums.GemType _GemType, Vector3 _Position)
     {
         var toReturn = pool[_GemType].Count > 0 ? pool[_GemType].Pop() : 
-            Object.Instantiate(GemPrefabByType(_GemType), _Position, Quaternion.identity);
+            Object.Instantiate(GemPrefabByType(_GemType));
+        
+        toReturn.transform.position = _Position;
         toReturn.gameObject.SetActive(true);
         return toReturn;
     }

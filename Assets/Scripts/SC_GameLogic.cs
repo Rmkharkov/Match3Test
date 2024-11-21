@@ -54,19 +54,18 @@ public class SC_GameLogic : MonoBehaviour
                 GameObject _bgTile = Instantiate(gameVariables.bgTilePrefabs, _pos, Quaternion.identity);
                 _bgTile.transform.SetParent(unityObjects["GemsHolder"].transform);
                 _bgTile.name = "BG Tile - " + x + ", " + y;
-
-                int _gemToUse = Random.Range(0, gameVariables.gems.Length);
-
-                int iterations = 0;
-                while (gameBoard.MatchesAt(new Vector2Int(x, y), gameVariables.gems[_gemToUse]) && iterations < 100)
-                {
-                    _gemToUse = Random.Range(0, gameVariables.gems.Length);
-                    iterations++;
-                }
-                SpawnGem(new Vector2Int(x, y), gameVariables.gems[_gemToUse].type);
+                
+                SpawnGem(new Vector2Int(x, y), SemiRandomGemTypeAtPosition(new Vector2Int(x, y)));
             }
     }
-    public void StartGame()
+
+    private GlobalEnums.GemType SemiRandomGemTypeAtPosition(Vector2Int _Position)
+    {
+        List<GlobalEnums.GemType> possibleGems = gameBoard.NecessaryGemTypesAt(new Vector2Int(_Position.x, _Position.y));
+        return possibleGems[Random.Range(0, possibleGems.Count)];
+    }
+    
+    private void StartGame()
     {
         unityObjects["Txt_Score"].GetComponent<TextMeshProUGUI>().text = score.ToString("0");
     }
@@ -75,7 +74,7 @@ public class SC_GameLogic : MonoBehaviour
         if (Random.Range(0, 100f) < gameVariables.bombChance)
             _GemTypeToSpawn = GlobalEnums.GemType.bomb;
 
-        SC_Gem _gem = gemsPool.Get(_GemTypeToSpawn, new Vector3(_Position.x, _Position.y + gameVariables.dropHeight, 0f));
+        SC_Gem _gem = gemsPool.Get(_GemTypeToSpawn, new Vector3(_Position.x, gameBoard.Height, 0f));
         _gem.transform.SetParent(unityObjects["GemsHolder"].transform);
         _gem.name = "Gem - " + _Position.x + ", " + _Position.y;
         gameBoard.SetGem(_Position.x,_Position.y, _gem);
@@ -150,7 +149,7 @@ public class SC_GameLogic : MonoBehaviour
     private IEnumerator FilledBoardCo()
     {
         yield return new WaitForSeconds(0.5f);
-        RefillBoard();
+        yield return RefillBoard();
         yield return new WaitForSeconds(0.5f);
         gameBoard.FindAllMatches();
         if (gameBoard.CurrentMatches.Count > 0)
@@ -164,19 +163,19 @@ public class SC_GameLogic : MonoBehaviour
             currentState = GlobalEnums.GameState.move;
         }
     }
-    private void RefillBoard()
+    private IEnumerator RefillBoard()
     {
-        for (int x = 0; x < gameBoard.Width; x++)
+        for (int y = 0; y < gameBoard.Height; y++)
         {
-            for (int y = 0; y < gameBoard.Height; y++)
+            for (int x = 0; x < gameBoard.Width; x++)
             {
                 SC_Gem _curGem = gameBoard.GetGem(x,y);
                 if (_curGem == null)
                 {
-                    int gemToUse = Random.Range(0, gameVariables.gems.Length);
-                    SpawnGem(new Vector2Int(x, y), gameVariables.gems[gemToUse].type);
+                    SpawnGem(new Vector2Int(x, y), SemiRandomGemTypeAtPosition(new Vector2Int(x, y)));
                 }
             }
+            yield return new WaitForSeconds(1f/gameVariables.gemSpeed);
         }
         CheckMisplacedGems();
     }
@@ -195,7 +194,7 @@ public class SC_GameLogic : MonoBehaviour
         }
 
         foreach (SC_Gem g in foundGems)
-            Destroy(g.gameObject);
+            gemsPool.Return(g);
     }
     public void FindAllMatches()
     {

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -50,6 +51,67 @@ public class GameBoard
         }
 
         return false;
+    }
+
+    public List<GlobalEnums.GemType> NecessaryGemTypesAt(Vector2Int _PositionToCheck)
+    {
+        List<GlobalEnums.GemType> toReturn = new List<GlobalEnums.GemType>();
+        for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
+        {
+            GlobalEnums.GemType gemType = (GlobalEnums.GemType)i;
+            if (CountHorizontal(_PositionToCheck, gemType) < 3 && CountVertical(_PositionToCheck, gemType) < 3 && gemType != GlobalEnums.GemType.bomb)
+            {
+                toReturn.Add(gemType);
+            }
+        }
+
+        if (toReturn.Count == 0)
+        {
+            for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
+            {
+                GlobalEnums.GemType setType = (GlobalEnums.GemType)i;
+                if (setType != GlobalEnums.GemType.bomb)
+                {
+                    toReturn.Add(setType);
+                }
+            }
+        }
+
+        return toReturn;
+    }
+
+    private int CountHorizontal(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
+    {
+        var toReturn = 1;
+
+        for (var i = _PositionToCheck.x - 1; i >= 0 && allGems[i, _PositionToCheck.y] != null && allGems[i, _PositionToCheck.y].type == _StoneType; i--)
+        {
+            toReturn++;
+        }
+
+        for (var i = _PositionToCheck.x + 1; i < Width && allGems[i, _PositionToCheck.y] != null && allGems[i, _PositionToCheck.y].type == _StoneType; i++)
+        {
+            toReturn++;
+        }
+
+        return toReturn;
+    }
+
+    private int CountVertical(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
+    {
+        int toReturn = 1;
+
+        for (int i = _PositionToCheck.y - 1; i >= 0 && allGems[_PositionToCheck.x, i] != null && allGems[_PositionToCheck.x, i].type == _StoneType; i--)
+        {
+            toReturn++;
+        }
+
+        for (int i = _PositionToCheck.y + 1; i < Height && allGems[_PositionToCheck.x, i] != null && allGems[_PositionToCheck.x, i].type == _StoneType; i++)
+        {
+            toReturn++;
+        }
+
+        return toReturn;
     }
 
     public void SetGem(int _X, int _Y, SC_Gem _Gem)
