@@ -22,12 +22,7 @@ public class SC_Gem : MonoBehaviour
 
     public int blastSize = 1;
     private SC_GameLogic scGameLogic;
-    private SC_GameVariablesConfig gameVariables;
-
-    private void Awake()
-    {
-        gameVariables = SC_GameVariablesConfig.Instance;
-    }
+    private SC_GameVariablesConfig gameVariables => SC_GameVariablesConfig.Instance();
 
     void Update()
     {
@@ -114,7 +109,7 @@ public class SC_Gem : MonoBehaviour
         scGameLogic.SetState(GlobalEnums.GameState.wait);
 
         yield return new WaitForSeconds(.5f);
-        scGameLogic.FindAllMatches();
+        scGameLogic.FindAllMatches(posIndex);
 
         if (otherGem != null)
         {

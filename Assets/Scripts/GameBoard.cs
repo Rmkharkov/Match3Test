@@ -15,7 +15,7 @@ public class GameBoard
     public int Width { get { return width; } }
   
     private SC_Gem[,] allGems;
-  //  public Gem[,] AllGems { get { return allGems; } }
+    public SC_Gem[,] AllGems { get { return allGems; } }
 
     private int score = 0;
     public int Score 
@@ -24,8 +24,8 @@ public class GameBoard
         set { score = value; }
     }
 
-    private List<SC_Gem> currentMatches = new List<SC_Gem>();
-    public List<SC_Gem> CurrentMatches { get { return currentMatches; } }
+    private List<List<SC_Gem>> currentMatches = new List<List<SC_Gem>>();
+    public List<List<SC_Gem>> CurrentMatches { get { return currentMatches; } }
     #endregion
 
     public GameBoard(int _Width, int _Height)
@@ -34,24 +34,6 @@ public class GameBoard
         width = _Width;
         allGems = new SC_Gem[width, height];
     }
-    public bool MatchesAt(Vector2Int _PositionToCheck, SC_Gem _GemToCheck)
-    {
-        if (_PositionToCheck.x > 1)
-        {
-            if (allGems[_PositionToCheck.x - 1, _PositionToCheck.y].type == _GemToCheck.type &&
-                allGems[_PositionToCheck.x - 2, _PositionToCheck.y].type == _GemToCheck.type)
-                return true;
-        }
-
-        if (_PositionToCheck.y > 1)
-        {
-            if (allGems[_PositionToCheck.x, _PositionToCheck.y - 1].type == _GemToCheck.type &&
-                allGems[_PositionToCheck.x, _PositionToCheck.y - 2].type == _GemToCheck.type)
-                return true;
-        }
-
-        return false;
-    }
 
     public List<GlobalEnums.GemType> NecessaryGemTypesAt(Vector2Int _PositionToCheck)
     {
@@ -59,7 +41,11 @@ public class GameBoard
         for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
         {
             GlobalEnums.GemType gemType = (GlobalEnums.GemType)i;
-            if (CountHorizontal(_PositionToCheck, gemType) < 3 && CountVertical(_PositionToCheck, gemType) < 3 && gemType != GlobalEnums.GemType.bomb)
+            if (gemType == GlobalEnums.GemType.bomb) continue;
+            
+            var horizontal = MatchHorizontal(_PositionToCheck, gemType);
+            var vertical = MatchVertical(_PositionToCheck, gemType);
+            if (horizontal == null && vertical == null)
             {
                 toReturn.Add(gemType);
             }
@@ -80,37 +66,50 @@ public class GameBoard
         return toReturn;
     }
 
-    private int CountHorizontal(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
+    private List<SC_Gem> MatchHorizontal(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
     {
-        var toReturn = 1;
+        var toReturn = new List<SC_Gem>();
+        toReturn.Add(allGems[_PositionToCheck.x, _PositionToCheck.y]);
 
         for (var i = _PositionToCheck.x - 1; i >= 0 && allGems[i, _PositionToCheck.y] != null && allGems[i, _PositionToCheck.y].type == _StoneType; i--)
         {
-            toReturn++;
+            toReturn.Add(allGems[i, _PositionToCheck.y]);
         }
 
         for (var i = _PositionToCheck.x + 1; i < Width && allGems[i, _PositionToCheck.y] != null && allGems[i, _PositionToCheck.y].type == _StoneType; i++)
         {
-            toReturn++;
+            toReturn.Add(allGems[i, _PositionToCheck.y]);
         }
 
+        if (toReturn.Count < 3)
+        {
+            return null;
+        }
+        
         return toReturn;
     }
 
-    private int CountVertical(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
+    private List<SC_Gem> MatchVertical(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
     {
-        int toReturn = 1;
+        var toReturn = new List<SC_Gem>();
+        toReturn.Add(allGems[_PositionToCheck.x, _PositionToCheck.y]);
 
         for (int i = _PositionToCheck.y - 1; i >= 0 && allGems[_PositionToCheck.x, i] != null && allGems[_PositionToCheck.x, i].type == _StoneType; i--)
         {
-            toReturn++;
+            toReturn.Add(allGems[_PositionToCheck.x, i]);
         }
 
         for (int i = _PositionToCheck.y + 1; i < Height && allGems[_PositionToCheck.x, i] != null && allGems[_PositionToCheck.x, i].type == _StoneType; i++)
         {
-            toReturn++;
+            toReturn.Add(allGems[_PositionToCheck.x, i]);
         }
 
+
+        if (toReturn.Count < 3)
+        {
+            return null;
+        }
+        
         return toReturn;
     }
 
@@ -123,7 +122,7 @@ public class GameBoard
        return allGems[_X, _Y];
     }
 
-    public void FindAllMatches()
+    public void FindAllMatches(Vector2Int _RequestedFrom)
     {
         currentMatches.Clear();
 
@@ -131,91 +130,59 @@ public class GameBoard
             for (int y = 0; y < height; y++)
             {
                 SC_Gem currentGem = allGems[x, y];
-                if (currentGem != null)
+                if (currentGem != null && !currentMatches.Any(c => c.Contains(currentGem)) && currentGem.type != GlobalEnums.GemType.bomb)
                 {
-                    if (x > 0 && x < width - 1)
+                    var horizontal = MatchHorizontal(new Vector2Int(x, y), currentGem.type);
+                    var vertical = MatchVertical(new Vector2Int(x, y), currentGem.type);
+                    if (horizontal != null)
                     {
-                        SC_Gem leftGem = allGems[x - 1, y];
-                        SC_Gem rightGem = allGems[x + 1, y];
-                        //checking no empty spots
-                        if (leftGem != null && rightGem != null)
-                        {
-                            //Match
-                            if (leftGem.type == currentGem.type && rightGem.type == currentGem.type)
-                            {
-                                currentGem.isMatch = true;
-                                leftGem.isMatch = true;
-                                rightGem.isMatch = true;
-                                currentMatches.Add(currentGem);
-                                currentMatches.Add(leftGem);
-                                currentMatches.Add(rightGem);
-                            }
-                        }
+                        currentMatches.Add(horizontal);
                     }
-
-                    if (y > 0 && y < height - 1)
+                    if (vertical != null)
                     {
-                        SC_Gem aboveGem = allGems[x, y - 1];
-                        SC_Gem bellowGem = allGems[x, y + 1];
-                        //checking no empty spots
-                        if (aboveGem != null && bellowGem != null)
-                        {
-                            //Match
-                            if (aboveGem.type == currentGem.type && bellowGem.type == currentGem.type)
-                            {
-                                currentGem.isMatch = true;
-                                aboveGem.isMatch = true;
-                                bellowGem.isMatch = true;
-                                currentMatches.Add(currentGem);
-                                currentMatches.Add(aboveGem);
-                                currentMatches.Add(bellowGem);
-                            }
-                        }
+                        currentMatches.Add(vertical);
                     }
                 }
             }
-
-        if (currentMatches.Count > 0)
-            currentMatches = currentMatches.Distinct().ToList();
-
-        CheckForBombs();
+        
+        currentMatches.ForEach(c => c.ForEach(g => g.isMatch = true));
     }
 
     public void CheckForBombs()
     {
         for (int i = 0; i < currentMatches.Count; i++)
         {
-            SC_Gem gem = currentMatches[i];
-            int x = gem.posIndex.x;
-            int y = gem.posIndex.y;
-
-            if (gem.posIndex.x > 0)
-            {
-                if (allGems[x - 1, y] != null && allGems[x - 1, y].type == GlobalEnums.GemType.bomb)
-                    MarkBombArea(new Vector2Int(x - 1, y), allGems[x - 1, y].blastSize);
-            }
-
-            if (gem.posIndex.x + 1 < width)
-            {
-                if (allGems[x + 1, y] != null && allGems[x + 1, y].type == GlobalEnums.GemType.bomb)
-                    MarkBombArea(new Vector2Int(x + 1, y), allGems[x + 1, y].blastSize);
-            }
-
-            if (gem.posIndex.y > 0)
-            {
-                if (allGems[x, y - 1] != null && allGems[x, y - 1].type == GlobalEnums.GemType.bomb)
-                    MarkBombArea(new Vector2Int(x, y - 1), allGems[x, y - 1].blastSize);
-            }
-
-            if (gem.posIndex.y + 1 < height)
-            {
-                if (allGems[x, y + 1] != null && allGems[x, y + 1].type == GlobalEnums.GemType.bomb)
-                    MarkBombArea(new Vector2Int(x, y + 1), allGems[x, y + 1].blastSize);
-            }
+            // SC_Gem gem = currentMatches[i];
+            // int x = gem.posIndex.x;
+            // int y = gem.posIndex.y;
+            //
+            // if (gem.posIndex.x > 0)
+            // {
+            //     if (allGems[x - 1, y] != null && allGems[x - 1, y].type == GlobalEnums.GemType.bomb)
+            //         MarkBombArea(new Vector2Int(x - 1, y), allGems[x - 1, y].blastSize);
+            // }
+            //
+            // if (gem.posIndex.x + 1 < width)
+            // {
+            //     if (allGems[x + 1, y] != null && allGems[x + 1, y].type == GlobalEnums.GemType.bomb)
+            //         MarkBombArea(new Vector2Int(x + 1, y), allGems[x + 1, y].blastSize);
+            // }
+            //
+            // if (gem.posIndex.y > 0)
+            // {
+            //     if (allGems[x, y - 1] != null && allGems[x, y - 1].type == GlobalEnums.GemType.bomb)
+            //         MarkBombArea(new Vector2Int(x, y - 1), allGems[x, y - 1].blastSize);
+            // }
+            //
+            // if (gem.posIndex.y + 1 < height)
+            // {
+            //     if (allGems[x, y + 1] != null && allGems[x, y + 1].type == GlobalEnums.GemType.bomb)
+            //         MarkBombArea(new Vector2Int(x, y + 1), allGems[x, y + 1].blastSize);
+            // }
         }
     }
 
-    public void MarkBombArea(Vector2Int bombPos, int _BlastSize)
+    private void MarkBombArea(Vector2Int bombPos, int _BlastSize)
     {
         string _print = "";
         for (int x = bombPos.x - _BlastSize; x <= bombPos.x + _BlastSize; x++)
@@ -228,7 +195,7 @@ public class GameBoard
                     {
                         _print += "(" + x + "," + y + ")" + System.Environment.NewLine;
                         allGems[x, y].isMatch = true;
-                        currentMatches.Add(allGems[x, y]);
+                        // currentMatches.Add(allGems[x, y]);
                     }
                 }
             }
