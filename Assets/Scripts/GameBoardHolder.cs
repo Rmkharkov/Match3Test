@@ -1,4 +1,4 @@
-﻿public class GameBoardHolder : Instantiable<GameBoardHolder>
+﻿public class GameBoardHolder : Instantiable<GameBoardHolder>, IGameBoardHolder
 {
 #region Variables
 
@@ -21,8 +21,8 @@
     {
         AllGems[_X, _Y] = _Gem;
     }
-    
-    public Gem GetGem(int _X,int _Y)
+
+    public Gem GetGem(int _X, int _Y)
     {
         return AllGems[_X, _Y];
     }
