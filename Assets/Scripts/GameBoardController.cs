@@ -7,6 +7,7 @@ public class GameBoardController : PresentedSingleton<GameBoardController>, IGam
     private IGameBoardHolder BoardHolder => GameBoardHolder.Instance;
     private IGemsCombiner UsedGemsCombiner => GemsCombiner.Instance;
     private IGemsMoving UsedGemsMoving => GemsMoving.Instance;
+    private IBombsMatching UsedBombsMatching => BombsMatching.Instance;
     private SC_GameVariablesConfig GameVariables => SC_GameVariablesConfig.Instance();
     public UnityEvent<EBoardState> ChangedBoardState { get; } = new UnityEvent<EBoardState>();
 
@@ -24,12 +25,19 @@ public class GameBoardController : PresentedSingleton<GameBoardController>, IGam
     {
         UsedGemsCombiner.MatchesDestroyFinishedSuccess.AddListener(OnDestroyMatchedGems);
         UsedGemsMoving.GemsFallAfterDestroyFinished.AddListener(OnFallAfterDestroyFinished);
+        UsedBombsMatching.BombsExplodingFinished.AddListener(OnDestroyBombs);
     }
 
     private void UnSubscribeOnEvents()
     {
         UsedGemsCombiner.MatchesDestroyFinishedSuccess.RemoveListener(OnDestroyMatchedGems);
         UsedGemsMoving.GemsFallAfterDestroyFinished.RemoveListener(OnFallAfterDestroyFinished);
+        UsedBombsMatching.BombsExplodingFinished.RemoveListener(OnDestroyBombs);
+    }
+
+    private void OnDestroyBombs()
+    {
+        OnDestroyMatchedGems(true);
     }
 
     private void OnDestroyMatchedGems(bool _WasntEmpty)

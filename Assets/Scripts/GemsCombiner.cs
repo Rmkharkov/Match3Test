@@ -13,10 +13,9 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
     public UnityEvent<Gem> DestroyMatchedGem { get; } = new UnityEvent<Gem>();
     public UnityEvent<Gem> SpawnedBombInsteadOfGem { get; } = new UnityEvent<Gem>();
 
-    protected override async void SubscribeOnEvents()
+    protected override void SubscribeOnEvents()
     {
         base.SubscribeOnEvents();
-        await Task.Yield();
         MatchChecker.MatchingFinishedEvent.AddListener(OnMatchingFinished);
     }
 
@@ -49,6 +48,7 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
                 var gem = gems[UnityEngine.Random.Range(0, gems.Count)];
                 position = GemsMoving.BoardPositionByInput(gem.Transform.position);
             }
+            gems.Remove(BoardHolder.GetGem(position.x, position.y));
             ReplaceGemWithBombAt(position);
         }
     }
@@ -61,23 +61,32 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
         {
             foreach (Gem gem in match)
             {
-                if (gem == null) continue;
-                BoardHolder.RemoveGemAt(gem.Transform.position);
-                DestroyMatchedGem.Invoke(gem);
-                UsedGemsExistence.RemoveGem(gem);
+                DestroyGem(gem);
             }
         }
+    }
+
+    public void DestroyGem(Gem _Gem)
+    {
+        if (_Gem == null) return;
+        
+        BoardHolder.RemoveGemAt(_Gem.Transform.position);
+        DestroyMatchedGem.Invoke(_Gem);
+        UsedGemsExistence.RemoveGem(_Gem);
     }
 
     private void ReplaceGemWithBombAt(Vector2Int _Position)
     {
         var gem = BoardHolder.GetGem(_Position.x, _Position.y);
+        var gemType = gem?.Type ?? GlobalEnums.GemType.bomb;
         if (gem != null)
         {
             BoardHolder.RemoveGemAt(gem.Transform.position);
             SpawnedBombInsteadOfGem.Invoke(gem);
             UsedGemsExistence.RemoveGem(gem);
         }
-        UsedGemsExistence.SpawnGem(_Position, _Position.y, GlobalEnums.GemType.bomb, true);
+        
+        var newGem = UsedGemsExistence.SpawnGem(_Position, _Position.y, gemType, true);
+        BoardHolder.SetGem(_Position.x, _Position.y, newGem);
     }
 }

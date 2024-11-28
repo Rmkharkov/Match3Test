@@ -12,10 +12,9 @@ public class GemsMatchChecker : MonoBoardSubscriber<GemsMatchChecker>, IGemsMatc
     public List<List<Gem>> CurrentMatches { get; } = new List<List<Gem>>();
     public UnityEvent<Vector2Int> MatchingFinishedEvent { get; } = new UnityEvent<Vector2Int>();
 
-    protected override async void SubscribeOnEvents()
+    protected override void SubscribeOnEvents()
     {
         base.SubscribeOnEvents();
-        await Task.Yield();
         UsedGemsMoving.GemsMovingFinished.AddListener(OnGemsFinishedMoving);
     }
 

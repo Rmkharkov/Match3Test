@@ -7,10 +7,9 @@ public class GemsEventEffects : MonoBoardSubscriber<GemsEventEffects>
     private IGemsCombiner UsedGemsCombiner => GemsCombiner.Instance;
     private SC_GameVariablesConfig GameVariables => SC_GameVariablesConfig.Instance();
 
-    protected override async void SubscribeOnEvents()
+    protected override void SubscribeOnEvents()
     {
         base.SubscribeOnEvents();
-        await Task.Yield();
         UsedGemsCombiner.DestroyMatchedGem.AddListener(OnGemDestroy);
     }
 
@@ -30,7 +29,7 @@ public class GemsEventEffects : MonoBoardSubscriber<GemsEventEffects>
         var prefab = GameVariables.EffectPrefabByType(_GemType);
         var effect = Instantiate(prefab, effectsParent);
         effect.transform.position = _Position;
-        var effectLength = effect.GetComponent<ParticleSystem>().totalTime;
+        var effectLength = effect.GetComponent<ParticleSystem>().main.duration;
         Destroy(effect, effectLength);
     }
 }

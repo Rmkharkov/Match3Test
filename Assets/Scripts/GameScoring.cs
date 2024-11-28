@@ -17,10 +17,9 @@ public class GameScoring : MonoBoardSubscriber<GameScoring>
         UpdateScoreText();
     }
 
-    protected override async void SubscribeOnEvents()
+    protected override void SubscribeOnEvents()
     {
         base.SubscribeOnEvents();
-        await Task.Yield();
         UsedGemsCombiner.DestroyMatchedGem.AddListener(OnGemDestroy);
         UsedGemsCombiner.SpawnedBombInsteadOfGem.AddListener(OnGemDestroy);
     }

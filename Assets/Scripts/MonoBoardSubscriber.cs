@@ -4,13 +4,16 @@ public class MonoBoardSubscriber<T> : PresentedSingleton<T> where T : MonoBehavi
 {
     private IGameBoardController BoardController => GameBoardController.Instance;
 
-    private void OnEnable() => SubscribeOnEvents();
+    private async void OnEnable()
+    {
+        await Task.Yield();
+        SubscribeOnEvents();
+    }
 
     private void OnDisable() => UnSubscribeOnEvents();
 
-    protected virtual async void SubscribeOnEvents()
+    protected virtual void SubscribeOnEvents()
     {
-        await Task.Yield();
         BoardController.ChangedBoardState.AddListener(OnChangedBoardState);
     }
 

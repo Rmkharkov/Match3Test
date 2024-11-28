@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
@@ -15,6 +16,7 @@ public class GemsMoving : MonoBoardSubscriber<GemsMoving>, IGemsMoving
     private Vector2Int moveRequestedFrom;
 
     public UnityEvent<Vector2Int> GemsMovingFinished { get; } = new UnityEvent<Vector2Int>();
+    public UnityEvent<List<Vector2Int>> MatchedBombs { get; } = new UnityEvent<List<Vector2Int>>();
     public UnityEvent GemsFallAfterDestroyFinished { get; } = new UnityEvent();
 
     private IEnumerator MoveGemTo(Gem _Gem, Vector2Int _TargetPosition)
@@ -103,6 +105,13 @@ public class GemsMoving : MonoBoardSubscriber<GemsMoving>, IGemsMoving
         var gem2 = GetGemByPosition(positionTwo);
         StartCoroutine(MoveGemTo(gem1, positionTwo));
         yield return MoveGemTo(gem2, positionOne);
+        if (gem1.IsBomb && gem2.IsBomb)
+        {
+            MatchedBombs.Invoke(new List<Vector2Int>{
+                positionOne, positionTwo
+            });
+            yield break;
+        }
 
         if (!AnyMatchOnSwitch(positionOne, gem2, positionTwo, gem1))
         {

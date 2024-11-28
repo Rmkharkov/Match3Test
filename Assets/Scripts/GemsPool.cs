@@ -8,22 +8,27 @@ public class GemsPool
 {
     private readonly Dictionary<GlobalEnums.GemType, Stack<SC_Gem>> poolOld;
     private readonly Dictionary<GlobalEnums.GemType, Stack<Gem>> pool;
+    private readonly Dictionary<GlobalEnums.GemType, Stack<Gem>> poolBombs;
     private SC_GameVariablesConfig GameVariables => SC_GameVariablesConfig.Instance();
 
     public GemsPool()
     {
         pool = new Dictionary<GlobalEnums.GemType, Stack<Gem>>();
+        poolBombs = new Dictionary<GlobalEnums.GemType, Stack<Gem>>();
         poolOld = new Dictionary<GlobalEnums.GemType, Stack<SC_Gem>>();
         for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
         {
             poolOld.TryAdd((GlobalEnums.GemType)i, new Stack<SC_Gem>(GameVariables.maxPoolSize));
             pool.TryAdd((GlobalEnums.GemType)i, new Stack<Gem>(GameVariables.maxPoolSize));
+            poolBombs.TryAdd((GlobalEnums.GemType)i, new Stack<Gem>(GameVariables.maxPoolSize));
         }
     }
 
     public Gem Get(GlobalEnums.GemType _GemType, bool _IsBomb, Vector3 _Position)
     {
-        var toReturn = pool[_GemType].Count > 0 ? pool[_GemType].Pop() : null;
+        var toReturn = !_IsBomb ? 
+            pool[_GemType].Count > 0 ? pool[_GemType].Pop() : null : 
+            poolBombs[_GemType].Count > 0 ? poolBombs[_GemType].Pop() : null;
 
         if (toReturn == null)
         {
@@ -49,7 +54,12 @@ public class GemsPool
 
     public void Return(Gem _Gem)
     {
-        if (pool[_Gem.Type].Count < GameVariables.maxPoolSize)
+        if (_Gem.IsBomb && poolBombs[_Gem.Type].Count < GameVariables.maxPoolSize)
+        {
+            poolBombs[_Gem.Type].Push(_Gem);
+            _Gem.GemObject.SetActive(false);
+        }
+        else if (!_Gem.IsBomb && pool[_Gem.Type].Count < GameVariables.maxPoolSize)
         {
             pool[_Gem.Type].Push(_Gem);
             _Gem.GemObject.SetActive(false);
@@ -75,13 +85,7 @@ public class GemsPool
 
     private SC_Gem GemPrefabByTypeOld(GlobalEnums.GemType _GemType)
     {
-        switch (_GemType)
-        {
-            case GlobalEnums.GemType.bomb:
-                return GameVariables.bomb;
-            default:
-                return GameVariables.gemsOld.FirstOrDefault(c => c.type == _GemType);
-        }
+        return GameVariables.bomb;
     }
 
     private GameObject GemPrefabByType(GlobalEnums.GemType _GemType, bool _IsBomb)
