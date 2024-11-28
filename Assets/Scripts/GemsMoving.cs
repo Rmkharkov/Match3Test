@@ -23,14 +23,17 @@ public class GemsMoving : MonoBoardSubscriber<GemsMoving>, IGemsMoving
     {
         movesInProgress++;
         var targetPosition = new Vector3(_TargetPosition.x, _TargetPosition.y);
-        while (Vector3.Distance(_Gem.Transform.position, targetPosition) > 0.01f)
+        while (_Gem.GemObject != null && Vector3.Distance(_Gem.Transform.position, targetPosition) > 0.01f)
         {
             _Gem.Transform.position = Vector2.Lerp(_Gem.Transform.position, _TargetPosition, GameVariables.gemSpeed * Time.deltaTime);
             yield return null;
         }
         
-        _Gem.Transform.position = new Vector3(_TargetPosition.x, _TargetPosition.y, 0);
-        BoardHolder.SetGem(_TargetPosition.x, _TargetPosition.y, _Gem);
+        if (_Gem.GemObject != null)
+        {
+            _Gem.Transform.position = new Vector3(_TargetPosition.x, _TargetPosition.y, 0);
+            BoardHolder.SetGem(_TargetPosition.x, _TargetPosition.y, _Gem);
+        }
         movesInProgress--;
     }
 
@@ -96,7 +99,7 @@ public class GemsMoving : MonoBoardSubscriber<GemsMoving>, IGemsMoving
     {
         var positionOne = BoardPositionByInput(_PositionOne);
         var positionTwo = BoardPositionByInput(_PositionTwo);
-        if (positionOne.x < 0 || positionOne.y < 0 || positionTwo.x < 0 || positionTwo.y < 0)
+        if (!IsSwitchPositionsGood(positionOne, positionTwo))
         {
             yield break;
         }
@@ -120,6 +123,13 @@ public class GemsMoving : MonoBoardSubscriber<GemsMoving>, IGemsMoving
         }
 
         WaitForFinishMoving();
+    }
+
+    private bool IsSwitchPositionsGood(Vector2Int _Position1, Vector2Int _Position2)
+    {
+        var totalPositionsGood = _Position1.x >= 0 && _Position1.y >= 0 && _Position2.x >= 0 && _Position2.y >= 0;
+        var relatedPositionsGood = Mathf.Abs(_Position1.x - _Position2.x) + Mathf.Abs(_Position1.y - _Position2.y) == 1;
+        return totalPositionsGood && relatedPositionsGood;
     }
 
     private bool AnyMatchOnSwitch(Vector2Int _Coordinate1, Gem _Gem1, Vector2Int _Coordinate2, Gem _Gem2)

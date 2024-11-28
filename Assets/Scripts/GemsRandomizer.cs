@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 public class GemsRandomizer : Instantiable<GemsRandomizer>, IGemsRandomizer
 {
     private IGemsMatchChecker MatchChecker => GemsMatchChecker.Instance;
-    
+
     public GlobalEnums.GemType SemiRandomGemTypeAtPosition(Vector2Int _Position)
     {
         List<GlobalEnums.GemType> possibleGems = NecessaryGemTypesAt(new Vector2Int(_Position.x, _Position.y));
@@ -18,8 +18,7 @@ public class GemsRandomizer : Instantiable<GemsRandomizer>, IGemsRandomizer
         for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
         {
             GlobalEnums.GemType gemType = (GlobalEnums.GemType)i;
-            if (gemType == GlobalEnums.GemType.bomb) continue;
-            
+
             var horizontal = MatchChecker.MatchHorizontal(_PositionToCheck, gemType);
             var vertical = MatchChecker.MatchVertical(_PositionToCheck, gemType);
             if (horizontal == null && vertical == null)
@@ -27,16 +26,13 @@ public class GemsRandomizer : Instantiable<GemsRandomizer>, IGemsRandomizer
                 toReturn.Add(gemType);
             }
         }
-        
+
         if (toReturn.Count == 0)
         {
             for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
             {
                 GlobalEnums.GemType setType = (GlobalEnums.GemType)i;
-                if (setType != GlobalEnums.GemType.bomb)
-                {
-                    toReturn.Add(setType);
-                }
+                toReturn.Add(setType);
             }
         }
 

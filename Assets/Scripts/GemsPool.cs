@@ -6,7 +6,6 @@ using Object = UnityEngine.Object;
 
 public class GemsPool
 {
-    private readonly Dictionary<GlobalEnums.GemType, Stack<SC_Gem>> poolOld;
     private readonly Dictionary<GlobalEnums.GemType, Stack<Gem>> pool;
     private readonly Dictionary<GlobalEnums.GemType, Stack<Gem>> poolBombs;
     private SC_GameVariablesConfig GameVariables => SC_GameVariablesConfig.Instance();
@@ -15,10 +14,8 @@ public class GemsPool
     {
         pool = new Dictionary<GlobalEnums.GemType, Stack<Gem>>();
         poolBombs = new Dictionary<GlobalEnums.GemType, Stack<Gem>>();
-        poolOld = new Dictionary<GlobalEnums.GemType, Stack<SC_Gem>>();
         for (var i = 0; i < Enum.GetNames(typeof(GlobalEnums.GemType)).Length; i++)
         {
-            poolOld.TryAdd((GlobalEnums.GemType)i, new Stack<SC_Gem>(GameVariables.maxPoolSize));
             pool.TryAdd((GlobalEnums.GemType)i, new Stack<Gem>(GameVariables.maxPoolSize));
             poolBombs.TryAdd((GlobalEnums.GemType)i, new Stack<Gem>(GameVariables.maxPoolSize));
         }
@@ -26,34 +23,25 @@ public class GemsPool
 
     public Gem Get(GlobalEnums.GemType _GemType, bool _IsBomb, Vector3 _Position)
     {
-        var toReturn = !_IsBomb ? 
-            pool[_GemType].Count > 0 ? pool[_GemType].Pop() : null : 
-            poolBombs[_GemType].Count > 0 ? poolBombs[_GemType].Pop() : null;
-
-        if (toReturn == null)
-        {
+        // var toReturn = !_IsBomb ? 
+        //     pool[_GemType].Count > 0 ? pool[_GemType].Pop() : null : 
+        //     poolBombs[_GemType].Count > 0 ? poolBombs[_GemType].Pop() : null;
+        //
+        // if (toReturn == null)
+        // {
             var spawnGem = Object.Instantiate(GemPrefabByType(_GemType, _IsBomb));
-            toReturn = new Gem(_GemType, spawnGem, _IsBomb);
-        }
+            var toReturn = new Gem(_GemType, spawnGem, _IsBomb);
+        // }
         
         toReturn.Transform.position = _Position;
         toReturn.GemObject.SetActive(true);
         return toReturn;
     }
 
-    public SC_Gem GetOld(GlobalEnums.GemType _GemType, Vector3 _Position)
-    {
-        var toReturn = poolOld[_GemType].Count > 0 ? poolOld[_GemType].Pop() : 
-            Object.Instantiate(GemPrefabByTypeOld(_GemType));
-        
-        toReturn.transform.position = _Position;
-        toReturn.gameObject.SetActive(true);
-        toReturn.isMatch = false;
-        return toReturn;
-    }
-
     public void Return(Gem _Gem)
     {
+        Object.Destroy(_Gem.GemObject);
+        return;
         if (_Gem.IsBomb && poolBombs[_Gem.Type].Count < GameVariables.maxPoolSize)
         {
             poolBombs[_Gem.Type].Push(_Gem);
@@ -68,24 +56,6 @@ public class GemsPool
         {
             Object.Destroy(_Gem.GemObject);
         }
-    }
-
-    public void ReturnOld(SC_Gem _Gem)
-    {
-        if (poolOld[_Gem.type].Count < GameVariables.maxPoolSize)
-        {
-            poolOld[_Gem.type].Push(_Gem);
-            _Gem.gameObject.SetActive(false);
-        }
-        else
-        {
-            Object.Destroy(_Gem);
-        }
-    }
-
-    private SC_Gem GemPrefabByTypeOld(GlobalEnums.GemType _GemType)
-    {
-        return GameVariables.bomb;
     }
 
     private GameObject GemPrefabByType(GlobalEnums.GemType _GemType, bool _IsBomb)

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
 public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
@@ -12,6 +13,7 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
     public UnityEvent<bool> MatchesDestroyFinishedSuccess { get; } = new UnityEvent<bool>();
     public UnityEvent<Gem> DestroyMatchedGem { get; } = new UnityEvent<Gem>();
     public UnityEvent<Gem> SpawnedBombInsteadOfGem { get; } = new UnityEvent<Gem>();
+    public UnityEvent<List<List<Gem>>> MatchedBombsAndGems { get; } = new UnityEvent<List<List<Gem>>>();
 
     protected override void SubscribeOnEvents()
     {
@@ -27,15 +29,36 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
 
     private void OnMatchingFinished(Vector2Int _RequestedFrom)
     {
-        CheckMatchesToSpawnBombs(_RequestedFrom);
         var empty = CurrentMatches.Count == 0;
         if (!empty)
         {
+            var anyBombInMatch = IsBombsInMatch();
+            CheckMatchesToSpawnBombs(_RequestedFrom);
+            if (anyBombInMatch)
+            {
+                MatchedBombsAndGems.Invoke(CurrentMatches);
+            }
             DestroyMatches();
         }
         MatchesDestroyFinishedSuccess.Invoke(!empty);
     }
-    
+
+    private bool IsBombsInMatch()
+    {
+        foreach (var currentMatch in CurrentMatches)
+        {
+            for (var i = currentMatch.Count - 1; i >= 0; i--)
+            {
+                if (currentMatch[i].IsBomb)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private void CheckMatchesToSpawnBombs(Vector2Int _RequestedFrom)
     {
         var matches = CurrentMatches;
@@ -48,9 +71,20 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
                 var gem = gems[UnityEngine.Random.Range(0, gems.Count)];
                 position = GemsMoving.BoardPositionByInput(gem.Transform.position);
             }
-            gems.Remove(BoardHolder.GetGem(position.x, position.y));
+            RemoveGemFromAllMatches(BoardHolder.GetGem(position.x, position.y));
             ReplaceGemWithBombAt(position);
         }
+    }
+
+    private void RemoveGemFromAllMatches(Gem _Gem)
+    {
+        CurrentMatches.ForEach(_C =>
+        {
+            if (_C.Contains(_Gem))
+            {
+                _C.Remove(_Gem);
+            }
+        });
     }
 
     private void DestroyMatches()
@@ -61,7 +95,10 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
         {
             foreach (Gem gem in match)
             {
-                DestroyGem(gem);
+                if (!gem.IsBomb)
+                {
+                    DestroyGem(gem);
+                }
             }
         }
     }
@@ -69,7 +106,7 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
     public void DestroyGem(Gem _Gem)
     {
         if (_Gem == null) return;
-        
+
         BoardHolder.RemoveGemAt(_Gem.Transform.position);
         DestroyMatchedGem.Invoke(_Gem);
         UsedGemsExistence.RemoveGem(_Gem);
@@ -78,14 +115,13 @@ public class GemsCombiner : MonoBoardSubscriber<GemsCombiner>, IGemsCombiner
     private void ReplaceGemWithBombAt(Vector2Int _Position)
     {
         var gem = BoardHolder.GetGem(_Position.x, _Position.y);
-        var gemType = gem?.Type ?? GlobalEnums.GemType.bomb;
-        if (gem != null)
-        {
-            BoardHolder.RemoveGemAt(gem.Transform.position);
-            SpawnedBombInsteadOfGem.Invoke(gem);
-            UsedGemsExistence.RemoveGem(gem);
-        }
+        if (gem == null) return;
         
+        var gemType = gem.Type;
+        BoardHolder.RemoveGemAt(gem.Transform.position);
+        SpawnedBombInsteadOfGem.Invoke(gem);
+        UsedGemsExistence.RemoveGem(gem);
+
         var newGem = UsedGemsExistence.SpawnGem(_Position, _Position.y, gemType, true);
         BoardHolder.SetGem(_Position.x, _Position.y, newGem);
     }

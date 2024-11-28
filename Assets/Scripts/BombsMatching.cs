@@ -15,17 +15,47 @@ public class BombsMatching : MonoBoardSubscriber<BombsMatching>, IBombsMatching
     {
         base.SubscribeOnEvents();
         UsedGemsMoving.MatchedBombs.AddListener(OnMatchingBombs);
+        UsedGemsCombiner.MatchedBombsAndGems.AddListener(OnRegularMatchingWithBomb);
     }
 
     protected override void UnSubscribeOnEvents()
     {
         base.UnSubscribeOnEvents();
         UsedGemsMoving.MatchedBombs.RemoveListener(OnMatchingBombs);
+        UsedGemsCombiner.MatchedBombsAndGems.RemoveListener(OnRegularMatchingWithBomb);
     }
 
     private void OnMatchingBombs(List<Vector2Int> _Coordinates)
     {
         var affectedCoords = CoordsToExplodeFromBombs(_Coordinates);
+        StartCoroutine(BombsDestroyFlow(affectedCoords));
+    }
+
+    private void OnRegularMatchingWithBomb(List<List<Gem>> _MatchedBombsAndGems)
+    {
+        var affectedCoords = new Dictionary<Vector2Int, bool>();
+        var bombsCoords = new List<Vector2Int>();
+        foreach (var matchedBombsAndGem in _MatchedBombsAndGems)
+        {
+            foreach (var gem in matchedBombsAndGem)
+            {
+                var coords = GemsMoving.BoardPositionByInput(gem.Transform.position);
+                affectedCoords.TryAdd(coords, gem.IsBomb);
+                if (gem.IsBomb)
+                {
+                    bombsCoords.Add(coords);
+                }
+            }
+        }
+        
+        foreach (var coordToExplodeFromBomb in CoordsToExplodeFromBombs(bombsCoords))
+        {
+            if (!affectedCoords.ContainsKey(coordToExplodeFromBomb.Key))
+            {
+                affectedCoords.Add(coordToExplodeFromBomb.Key, coordToExplodeFromBomb.Value);
+            }
+        }
+        
         StartCoroutine(BombsDestroyFlow(affectedCoords));
     }
 

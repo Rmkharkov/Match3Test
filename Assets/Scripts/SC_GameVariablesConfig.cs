@@ -6,7 +6,6 @@ using UnityEngine.Serialization;
 public class SC_GameVariablesConfig : ScriptableObjectSingleton<SC_GameVariablesConfig>
 {
     public GameObject bgTilePrefabs;
-    public SC_Gem bomb;
     [SerializeField] private GemData[] gems;
     [SerializeField] private GemData[] bombs;
     [SerializeField] private GemData[] effects;
