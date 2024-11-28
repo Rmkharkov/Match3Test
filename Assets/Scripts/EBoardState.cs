@@ -5,4 +5,5 @@
     CheckingGemsMatch,
     DestroyGems,
     DestroyBombs,
+    AfterDestroy,
 }

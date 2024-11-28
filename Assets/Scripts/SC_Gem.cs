@@ -20,12 +20,12 @@ public class SC_Gem : MonoBehaviour
     public GameObject destroyEffect;
     public int scoreValue = 10;
 
-    public int blastSize = 1;
     private SC_GameLogic scGameLogic;
     private SC_GameVariablesConfig gameVariables => SC_GameVariablesConfig.Instance();
 
     void Update()
     {
+        return;
         if (Vector2.Distance(transform.position, posIndex) > 0.01f)
             transform.position = Vector2.Lerp(transform.position, posIndex, gameVariables.gemSpeed * Time.deltaTime);
         else

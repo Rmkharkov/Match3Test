@@ -1,6 +1,6 @@
 ﻿using System;
 using UnityEngine;
-public class GemsExistence : MonoBehaviour, IGemsExistence
+public class GemsExistence : PresentedSingleton<GemsExistence>, IGemsExistence
 {
     [SerializeField] private Transform gemsParent;
 

@@ -1,13 +1,19 @@
 ﻿using System;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 public class GameBoardController : PresentedSingleton<GameBoardController>, IGameBoardController
 {
-    private IGameBoardFiller BoardFiller => GameBoardFiller.Instance;
-    public UnityEvent<EBoardState> ChangedBoardState { get; private set; } = new UnityEvent<EBoardState>();
+    private IGameBoardHolder BoardHolder => GameBoardHolder.Instance;
+    private IGemsCombiner UsedGemsCombiner => GemsCombiner.Instance;
+    private IGemsMoving UsedGemsMoving => GemsMoving.Instance;
+    private SC_GameVariablesConfig GameVariables => SC_GameVariablesConfig.Instance();
+    public UnityEvent<EBoardState> ChangedBoardState { get; } = new UnityEvent<EBoardState>();
 
-    private void Start()
+    private async void Start()
     {
+        BoardHolder.SetupBoard(GameVariables.colsSize, GameVariables.rowsSize);
+        await Task.Delay(TimeSpan.FromSeconds(GameVariables.delayBeforeStart));
         ChangedBoardState.Invoke(EBoardState.WaitForFill);
     }
 
@@ -16,16 +22,23 @@ public class GameBoardController : PresentedSingleton<GameBoardController>, IGam
 
     private void SubscribeOnEvents()
     {
-        BoardFiller.BoardFillingFinishedEvent.AddListener(OnBoardFilled);
+        UsedGemsCombiner.MatchesDestroyFinishedSuccess.AddListener(OnDestroyMatchedGems);
+        UsedGemsMoving.GemsFallAfterDestroyFinished.AddListener(OnFallAfterDestroyFinished);
     }
 
     private void UnSubscribeOnEvents()
     {
-        BoardFiller.BoardFillingFinishedEvent.RemoveListener(OnBoardFilled);
+        UsedGemsCombiner.MatchesDestroyFinishedSuccess.RemoveListener(OnDestroyMatchedGems);
+        UsedGemsMoving.GemsFallAfterDestroyFinished.RemoveListener(OnFallAfterDestroyFinished);
     }
 
-    private void OnBoardFilled()
+    private void OnDestroyMatchedGems(bool _WasntEmpty)
     {
-        ChangedBoardState.Invoke(EBoardState.CheckingGemsMatch);
+        ChangedBoardState.Invoke(_WasntEmpty ? EBoardState.AfterDestroy : EBoardState.Default);
+    }
+
+    private void OnFallAfterDestroyFinished()
+    {
+        ChangedBoardState.Invoke(EBoardState.WaitForFill);
     }
 }

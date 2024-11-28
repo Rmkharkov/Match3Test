@@ -10,12 +10,15 @@ public class SC_GameVariablesConfig : ScriptableObjectSingleton<SC_GameVariables
     [FormerlySerializedAs("gems")] public SC_Gem[] gemsOld;
     [SerializeField] private GemData[] gems;
     [SerializeField] private GemData[] bombs;
+    [SerializeField] private GemData[] effects;
     public float bonusAmount = 0.5f;
     public float bombChance = 2f;
     public int dropHeight = 0;
     public float gemSpeed;
     public float scoreSpeed = 5;
     public int maxPoolSize = 100;
+    public int scoreByGem = 10;
+    public float delayBeforeStart = 0.1f;
     
     [HideInInspector]
     public int rowsSize = 7;
@@ -29,6 +32,11 @@ public class SC_GameVariablesConfig : ScriptableObjectSingleton<SC_GameVariables
             return bombs.FirstOrDefault(c => c.GemType == _GemType).Prefab;
         }
         return gems.FirstOrDefault(c => c.GemType == _GemType).Prefab;
+    }
+
+    public GameObject EffectPrefabByType(GlobalEnums.GemType _GemType)
+    {
+        return effects.FirstOrDefault(c => c.GemType == _GemType).Prefab;
     }
     
     [System.Serializable]

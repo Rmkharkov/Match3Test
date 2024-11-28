@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Threading.Tasks;
+using UnityEngine;
 public class MonoBoardSubscriber<T> : PresentedSingleton<T> where T : MonoBehaviour
 {
     private IGameBoardController BoardController => GameBoardController.Instance;
@@ -7,8 +8,9 @@ public class MonoBoardSubscriber<T> : PresentedSingleton<T> where T : MonoBehavi
 
     private void OnDisable() => UnSubscribeOnEvents();
 
-    protected virtual void SubscribeOnEvents()
+    protected virtual async void SubscribeOnEvents()
     {
+        await Task.Yield();
         BoardController.ChangedBoardState.AddListener(OnChangedBoardState);
     }
 

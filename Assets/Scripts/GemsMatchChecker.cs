@@ -1,20 +1,33 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Events;
 public class GemsMatchChecker : MonoBoardSubscriber<GemsMatchChecker>, IGemsMatchChecker
 {
-    private GameBoardHolder GameBoard => GameBoardHolder.Instance;
+    private IGameBoardHolder GameBoard => GameBoardHolder.Instance;
+    private IGemsMoving UsedGemsMoving => GemsMoving.Instance;
     private Gem[,] AllGems => GameBoard.AllGems;
 
-    public List<List<Gem>> CurrentMatches { get; private set; } = new List<List<Gem>>();
+    public List<List<Gem>> CurrentMatches { get; } = new List<List<Gem>>();
+    public UnityEvent<Vector2Int> MatchingFinishedEvent { get; } = new UnityEvent<Vector2Int>();
 
-    protected override void OnChangedBoardState(EBoardState _State)
+    protected override async void SubscribeOnEvents()
     {
-        base.OnChangedBoardState(_State);
-        if (_State == EBoardState.CheckingGemsMatch)
-        {
-            
-        }
+        base.SubscribeOnEvents();
+        await Task.Yield();
+        UsedGemsMoving.GemsMovingFinished.AddListener(OnGemsFinishedMoving);
+    }
+
+    protected override void UnSubscribeOnEvents()
+    {
+        base.UnSubscribeOnEvents();
+        UsedGemsMoving.GemsMovingFinished.RemoveListener(OnGemsFinishedMoving);
+    }
+
+    private void OnGemsFinishedMoving(Vector2Int _RequestedFrom)
+    {
+        FindAllMatches(_RequestedFrom);
     }
 
     public List<Gem> MatchHorizontal(Vector2Int _PositionToCheck, GlobalEnums.GemType _StoneType)
@@ -64,6 +77,11 @@ public class GemsMatchChecker : MonoBoardSubscriber<GemsMatchChecker>, IGemsMatc
         return toReturn;
     }
 
+    public bool AnyMatchAt(Vector2Int _Coordinate, GlobalEnums.GemType _StoneType)
+    {
+        return MatchHorizontal(_Coordinate, _StoneType) != null || MatchVertical(_Coordinate, _StoneType) != null;
+    }
+
     private void FindAllMatches(Vector2Int _RequestedFrom)
     {
         CurrentMatches.Clear();
@@ -86,5 +104,7 @@ public class GemsMatchChecker : MonoBoardSubscriber<GemsMatchChecker>, IGemsMatc
                 }
             }
         }
+        
+        MatchingFinishedEvent.Invoke(_RequestedFrom);
     }
 }

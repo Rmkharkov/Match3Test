@@ -1,4 +1,5 @@
-﻿public class GameBoardHolder : Instantiable<GameBoardHolder>, IGameBoardHolder
+﻿using UnityEngine;
+public class GameBoardHolder : Instantiable<GameBoardHolder>, IGameBoardHolder
 {
 #region Variables
 
@@ -25,5 +26,11 @@
     public Gem GetGem(int _X, int _Y)
     {
         return AllGems[_X, _Y];
+    }
+
+    public void RemoveGemAt(Vector2 _Position)
+    {
+        var coords = GemsMoving.BoardPositionByInput(_Position);
+        SetGem(coords.x, coords.y, null);
     }
 }

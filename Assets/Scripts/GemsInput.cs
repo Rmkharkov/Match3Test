@@ -2,7 +2,7 @@
 using UnityEngine.Events;
 public class GemsInput : MonoBoardSubscriber<GemsInput>, IGemsInput
 {
-    private Camera CurrentCamera => Camera.current;
+    private Camera CurrentCamera => Camera.main;
     private Vector2 firstTouchPosition;
     private Vector2 finalTouchPosition;
     private float swipeAngle;
@@ -10,7 +10,7 @@ public class GemsInput : MonoBoardSubscriber<GemsInput>, IGemsInput
 
     private bool isInDefaultState;
 
-    public UnityEvent<Vector2, Vector2> SwitchGemsInputEvent { get; private set; } = new UnityEvent<Vector2, Vector2>();
+    public UnityEvent<Vector2, Vector2> SwitchGemsInputEvent { get; } = new UnityEvent<Vector2, Vector2>();
 
     private void Update()
     {
@@ -40,6 +40,8 @@ public class GemsInput : MonoBoardSubscriber<GemsInput>, IGemsInput
         if (!isInDefaultState) return;
         
         finalTouchPosition = CurrentCamera.ScreenToWorldPoint(Input.mousePosition);
+        finalTouchPosition.x = Mathf.Clamp(finalTouchPosition.x, firstTouchPosition.x - 1, firstTouchPosition.x + 1);
+        finalTouchPosition.y = Mathf.Clamp(finalTouchPosition.y, firstTouchPosition.y - 1, firstTouchPosition.y + 1);
         SwitchGemsInputEvent.Invoke(firstTouchPosition, finalTouchPosition);
     }
 }

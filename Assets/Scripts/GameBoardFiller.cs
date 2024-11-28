@@ -8,15 +8,14 @@ public class GameBoardFiller : MonoBoardSubscriber<GameBoardFiller>, IGameBoardF
     private IGameBoardHolder BoardHolder => GameBoardHolder.Instance;
     private IGemsRandomizer UsedGemsRandomizer => GemsRandomizer.Instance;
     private SC_GameVariablesConfig GameVariables => SC_GameVariablesConfig.Instance();
-    [SerializeField] private GemsExistence gemsExistence;
-    private IGemsExistence UsedGemsExistence => gemsExistence;
+    private IGemsExistence UsedGemsExistence => GemsExistence.Instance;
 
-    public UnityEvent BoardFillingFinishedEvent { get; private set; } = new UnityEvent();
+    public UnityEvent BoardFillingFinishedEvent { get; } = new UnityEvent();
+    public UnityEvent<Gem, Vector2Int> GemSpawnedAtEvent { get; } = new UnityEvent<Gem, Vector2Int>();
 
     protected override void OnChangedBoardState(EBoardState _State)
     {
         base.OnChangedBoardState(_State);
-        
         if (_State == EBoardState.WaitForFill)
         {
             StartCoroutine(FillBoard());
@@ -36,6 +35,7 @@ public class GameBoardFiller : MonoBoardSubscriber<GameBoardFiller>, IGameBoardF
                     var gemType = UsedGemsRandomizer.SemiRandomGemTypeAtPosition(new Vector2Int(x, y));
                     var gem = UsedGemsExistence.SpawnGem(pos, BoardHolder.Height, gemType, false);
                     BoardHolder.SetGem(x, y, gem);
+                    GemSpawnedAtEvent.Invoke(gem, pos);
                 }
             }
             yield return new WaitForSeconds(1f/GameVariables.gemSpeed);
