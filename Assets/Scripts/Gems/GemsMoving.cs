@@ -165,7 +165,32 @@ namespace Gems
                 nullCounter = 0;
             }
 
+            var moveRoutines = new List<Coroutine>();
+            for (int x = 0; x < BoardHolder.Width; x++)
+            {
+                moveRoutines.Add(StartCoroutine(MoveColumn(x)));
+            }
+            
+            foreach (var moveRoutine in moveRoutines)
+            {
+                yield return moveRoutine;
+            }
+
             GemsFallAfterDestroyFinished.Invoke();
+        }
+
+        private IEnumerator MoveColumn(int _ID)
+        {
+            var gemsCounter = 0;
+            for (int y = 0; y < BoardHolder.Height; y++)
+            {
+                Gem curGem = BoardHolder.GetGem(_ID, y);
+                if (curGem == null) continue;
+                StartCoroutine(MoveGemTo(curGem, new Vector2Int(_ID, y)));
+                var delayInSec = GameVariables.baseFallDelay - GameVariables.decFallDelay * gemsCounter;
+                yield return new WaitForSecondsRealtime(delayInSec);
+                gemsCounter++;
+            }
         }
 
         public static Vector2Int BoardPositionByInput(Vector2 _InputPosition)

@@ -1,4 +1,6 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Core;
 using Gems;
 using UnityEngine;
@@ -26,24 +28,38 @@ namespace Board
 
         private IEnumerator FillBoard()
         {
+            var coroutines = new List<Coroutine>();
+            for (int x = 0; x < BoardHolder.Width; x++)
+            {
+                coroutines.Add(StartCoroutine(FillColumn(x)));
+            }
+            
+            foreach (var coroutine in coroutines)
+            {
+                yield return coroutine;
+            }
+
+            BoardFillingFinishedEvent.Invoke();
+        }
+
+        private IEnumerator FillColumn(int _ID)
+        {
+            var gemsCounter = 0;
             for (int y = 0; y < BoardHolder.Height; y++)
             {
-                for (int x = 0; x < BoardHolder.Width; x++)
+                Gem curGem = BoardHolder.GetGem(_ID, y);
+                if (curGem == null)
                 {
-                    Gem curGem = BoardHolder.GetGem(x,y);
-                    if (curGem == null)
-                    {
-                        var pos = new Vector2Int(x, y);
-                        var gemType = UsedGemsRandomizer.SemiRandomGemTypeAtPosition(new Vector2Int(x, y));
-                        var gem = UsedGemsExistence.SpawnGem(pos, BoardHolder.Height, gemType, false);
-                        BoardHolder.SetGem(x, y, gem);
-                        GemSpawnedAtEvent.Invoke(gem, pos);
-                    }
+                    var pos = new Vector2Int(_ID, y);
+                    var gemType = UsedGemsRandomizer.SemiRandomGemTypeAtPosition(new Vector2Int(_ID, y));
+                    var gem = UsedGemsExistence.SpawnGem(pos, BoardHolder.Height, gemType, false);
+                    BoardHolder.SetGem(_ID, y, gem);
+                    GemSpawnedAtEvent.Invoke(gem, pos);
+                    var delayInSec = GameVariables.baseFallDelay - GameVariables.decFallDelay * gemsCounter;
+                    yield return new WaitForSecondsRealtime(delayInSec);
+                    gemsCounter++;
                 }
-                yield return new WaitForSeconds(1f/GameVariables.gemSpeed);
             }
-        
-            BoardFillingFinishedEvent.Invoke();
         }
     }
 }

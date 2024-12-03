@@ -14,6 +14,9 @@ public class SC_GameVariablesConfig : ScriptableObjectSingleton<SC_GameVariables
     public float bombChance = 2f;
     public int dropHeight = 0;
     public float gemSpeed;
+    public float spawnDelayPerHeight = 0.1f;
+    public float baseFallDelay = 0.7f;
+    public float decFallDelay = 0.1f;
     public float scoreSpeed = 5;
     public int maxPoolSize = 100;
     public int scoreByGem = 10;
