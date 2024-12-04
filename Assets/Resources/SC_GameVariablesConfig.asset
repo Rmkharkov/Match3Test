@@ -65,7 +65,9 @@ MonoBehaviour:
   bombChance: 3
   dropHeight: 1
   gemSpeed: 7
-  spawnDelayPerHeight: 0.03
+  spawnDelayPerHeight: 0.2
+  baseFallDelay: 0.2
+  decFallDelay: 0.02
   scoreSpeed: 5
   maxPoolSize: 100
   scoreByGem: 10

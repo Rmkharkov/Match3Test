@@ -91,7 +91,7 @@ namespace Gems
             foreach (var bombCoord in _BombsCoords)
             {
                 var coords = GetSurroundingCoordinates(bombCoord);
-                coords.ForEach(_C => toReturn.TryAdd(_C, _BombsCoords.Contains(_C) || BoardHolder.GetGem(_C.x, _C.y).IsBomb));
+                coords.ForEach(_C => toReturn.TryAdd(_C, _BombsCoords.Contains(_C) || (BoardHolder.GetGem(_C.x, _C.y) != null && BoardHolder.GetGem(_C.x, _C.y).IsBomb)));
             }
 
             return toReturn;

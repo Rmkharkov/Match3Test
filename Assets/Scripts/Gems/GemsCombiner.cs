@@ -36,12 +36,12 @@ namespace Gems
             {
                 var anyBombInMatch = IsBombsInMatch();
                 CheckMatchesToSpawnBombs(_RequestedFrom);
+                DestroyMatches();
                 if (anyBombInMatch)
                 {
                     MatchedBombsAndGems.Invoke(CurrentMatches);
                     return;
                 }
-                DestroyMatches();
             }
             MatchesDestroyFinishedSuccess.Invoke(!empty);
         }
@@ -67,16 +67,35 @@ namespace Gems
             var matches = CurrentMatches;
             foreach (var gems in matches)
             {
-                if (gems.Count < 4) continue;
+                var normalGemsInMatch = GemsInMatchExcludeBombs(gems);
+                if (normalGemsInMatch.Count < 4) continue;
                 var position = _RequestedFrom;
                 if (_RequestedFrom == -Vector2Int.one)
                 {
-                    var gem = gems[UnityEngine.Random.Range(0, gems.Count)];
+                    var gem = normalGemsInMatch[UnityEngine.Random.Range(0, normalGemsInMatch.Count)];
                     position = GemsMoving.BoardPositionByInput(gem.Transform.position);
                 }
                 RemoveGemFromAllMatches(BoardHolder.GetGem(position.x, position.y));
                 ReplaceGemWithBombAt(position);
             }
+        }
+
+        private List<Gem> GemsInMatchExcludeBombs(List<Gem> _GemsMatch)
+        {
+            var toReturn = new List<Gem>();
+            _GemsMatch.ForEach(_G =>
+            {
+                if (!_G.IsBomb)
+                {
+                    toReturn.Add(_G);
+                }
+                else if (toReturn.Count < 4)
+                {
+                    toReturn.Clear();
+                }
+            });
+
+            return toReturn;
         }
 
         private void RemoveGemFromAllMatches(Gem _Gem)
